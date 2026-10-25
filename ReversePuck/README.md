@@ -40,6 +40,23 @@ analog offsets in `input_source.py` if anything's off. The IMU axis remap (`IMU_
 | `ReversePuck` | `uv` launcher (`pyserial`+`pygame`+`pyusb`) — add this as a non-Steam game. |
 | `setup.sh` | Per-boot `sudo`: opens `/dev/ttyACM*` + the controller's usbfs node. Not needed on SteamOS (see below). |
 
+## AppImage (easiest: launch from Game Mode)
+
+One file with Python and all its dependencies inside: no `uv`, no network, no `sudo ./setup.sh`. On
+SteamOS, Steam's own udev rule already gives the logged-in user access to every Valve (`28DE`) USB device,
+which covers both the dongle's CDC port and the Deck controller's usbfs node.
+
+1. Download it from a release, or from the **ReversePuck AppImage** workflow's artifacts (built for every
+   commit that touches `ReversePuck/`). Or build it (macOS with `brew install squashfs`, or x86_64 Linux):
+   `ReversePuck/packaging/build-appimage.sh` → `build/reversepuck-appimage/ReversePuck-<version>-x86_64.AppImage`.
+2. Copy it to the Deck (e.g. `~/Applications/ReversePuck.AppImage`) and make it executable.
+3. In Desktop Mode, add it to Steam as a non-Steam game. In its **Properties → Controller**, set
+   **Disable Steam Input**.
+4. Launch it from Game Mode like any game.
+
+The log goes to `~/.local/state/reversepuck/openctrl.log`. Exiting the game from Steam hands the Deck
+controls back, and if a previous run was killed while holding them, the next launch gives them back.
+
 ## Run with `uv` (no system install, read-only SteamOS friendly)
 
 The `ReversePuck` launcher runs the app via [`uv`](https://docs.astral.sh/uv/), which provisions its own
@@ -146,9 +163,8 @@ Build a flashable dongle image with `make reversepuck` (from the repo root); fla
 - **Lizard mode** — while forwarding, the app keeps the Deck pad out of lizard mode (its watchdog would
   otherwise turn the trackpad mouse and its haptic ticks back on), and it hands the pad back when it's
   closed or killed.
-- **Game Mode / gamescope** — the libusb detach and evdev `EVIOCGRAB` both behave cleanly in **Desktop
-  Mode**. In Game Mode, Steam Input owns the controller, so detach behaves differently; run from Desktop
-  Mode for now.
+- **Game Mode / gamescope** — use the AppImage (see above) and set **Disable Steam Input** on its
+  shortcut; it runs from Game Mode and hands the pad back when Steam exits it.
 - **Button mapping** lives in `input_source.DECK_BTN_MAP` (libusb) / `KEYMAP` (evdev); adjust if your
   Deck maps face buttons or back paddles differently.
 - **Real Valve puck interop** — the RF reconnect (`../ReversePuckFirmware/ctrl_link.cpp`) adopts the
